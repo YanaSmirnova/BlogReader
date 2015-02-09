@@ -22,7 +22,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:text="No items to display"
-        />
+        android:text="No items to display" />
 
 </RelativeLayout>
