@@ -22,7 +22,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 
@@ -65,7 +64,7 @@ public class MainListActivity extends ListActivity {
         @Override
         protected String doInBackground(Object[] params) {
             int responseCode = -1;
-            JSONObject jsonResponse = null;
+            JSONObject jsonResponse;
             StringBuilder builder = new StringBuilder();
             HttpClient client = new DefaultHttpClient();
             HttpGet httpget = new HttpGet("http://blog.teamtreehouse.com/api/get_recent_summary?count=" + NUMBER_OF_POSTS);
@@ -78,7 +77,7 @@ public class MainListActivity extends ListActivity {
                     HttpEntity entity = response.getEntity();
                     InputStream content = entity.getContent();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(content));
-                    String line = "";
+                    String line;
                     while((line = reader.readLine()) != null){
                         builder.append(line);
                     }
@@ -87,8 +86,8 @@ public class MainListActivity extends ListActivity {
                     String status = jsonResponse.getString("status");
                     Log.v(TAG, status);
 
-                    JSONObject jsonPost = new JSONObject();
-                    String title = "";
+                    JSONObject jsonPost;
+                    String title;
 
                     JSONArray jsonPosts = jsonResponse.getJSONArray("posts");
                     Log.v(TAG, "No of posts in array " + jsonPosts.length());
