@@ -9,16 +9,22 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URL;
 
 public class MainListActivity extends ListActivity {
 
@@ -59,21 +65,25 @@ public class MainListActivity extends ListActivity {
         @Override
         protected String doInBackground(Object[] params) {
             int responseCode = -1;
+            JSONObject jsonResponse = null;
+            StringBuilder builder = new StringBuilder();
+            HttpClient client = new DefaultHttpClient();
+            HttpGet httpget = new HttpGet("http://blog.teamtreehouse.com/api/get_recent_summary?count=" + NUMBER_OF_POSTS);
 
             try {
-                URL blogFeedUrl = new URL("http://blog.teamtreehouse.com/api/get_recent_summary/?count=" + NUMBER_OF_POSTS);
-                HttpURLConnection connection = (HttpURLConnection) blogFeedUrl.openConnection();
-                connection.connect();
-                responseCode = connection.getResponseCode();
+                HttpResponse response = client.execute(httpget);
+                StatusLine statusLine = response.getStatusLine();
+                responseCode = statusLine.getStatusCode();
                 if (responseCode == HttpURLConnection.HTTP_OK) {
-                    InputStream inputStream = connection.getInputStream();
-                    Reader reader = new InputStreamReader(inputStream);
-                    int contentLength = connection.getContentLength();
-                    char[] charArray = new char[contentLength];
-                    reader.read(charArray);
-                    String responseData = new String(charArray);
+                    HttpEntity entity = response.getEntity();
+                    InputStream content = entity.getContent();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(content));
+                    String line = "";
+                    while((line = reader.readLine()) != null){
+                        builder.append(line);
+                    }
+                    jsonResponse = new JSONObject(builder.toString());
 
-                    JSONObject jsonResponse = new JSONObject(responseData);
                     String status = jsonResponse.getString("status");
                     Log.v(TAG, status);
 
