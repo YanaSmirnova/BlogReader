@@ -1,12 +1,15 @@
 package yanasmirnova.com.blogreader;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import org.apache.http.HttpEntity;
@@ -16,6 +19,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -30,6 +34,7 @@ public class MainListActivity extends ListActivity {
     protected String[] mBlogPostTitles;
     public static final int NUMBER_OF_POSTS = 20;
     public static final String TAG = MainListActivity.class.getSimpleName();
+    protected JSONObject mBlogData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,12 +64,43 @@ public class MainListActivity extends ListActivity {
         return isAvailable;
     }
 
-    private class GetBlogPostsTask extends AsyncTask<Object, Void, String> {
+    private void updateList() {
+        if (mBlogData == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(getString(R.string.err_title));
+            builder.setMessage(getString(R.string.err_msg));
+            builder.setPositiveButton(android.R.string.ok, null);
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+        else {
+            try {
+                //Log.d(TAG, mBlogData.toString(2));
+                JSONArray jsonPosts = mBlogData.getJSONArray("posts");
+                mBlogPostTitles = new String[jsonPosts.length()];
+                for (int i=0; i<jsonPosts.length(); i++) {
+                    JSONObject post = jsonPosts.getJSONObject(i);
+                    String title = post.getString("title");
+                    // to convert html special characters back into symbols
+                    title = Html.fromHtml(title).toString();
+                    mBlogPostTitles[i] = title;
+                }
+
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                        android.R.layout.simple_list_item_1, mBlogPostTitles);
+                setListAdapter(adapter);
+            } catch (JSONException e) {
+                Log.e(TAG, "Exception caught: ", e);
+            }
+        }
+    }
+
+    private class GetBlogPostsTask extends AsyncTask<Object, Void, JSONObject> {
 
         @Override
-        protected String doInBackground(Object[] params) {
+        protected JSONObject doInBackground(Object[] params) {
             int responseCode = -1;
-            JSONObject jsonResponse;
+            JSONObject jsonResponse = null;
             StringBuilder builder = new StringBuilder();
             HttpClient client = new DefaultHttpClient();
             HttpGet httpget = new HttpGet("http://blog.teamtreehouse.com/api/get_recent_summary?count=" + NUMBER_OF_POSTS);
@@ -82,20 +118,6 @@ public class MainListActivity extends ListActivity {
                         builder.append(line);
                     }
                     jsonResponse = new JSONObject(builder.toString());
-
-                    String status = jsonResponse.getString("status");
-                    Log.v(TAG, status);
-
-                    JSONObject jsonPost;
-                    String title;
-
-                    JSONArray jsonPosts = jsonResponse.getJSONArray("posts");
-                    Log.v(TAG, "No of posts in array " + jsonPosts.length());
-                    for (int i=0; i<jsonPosts.length(); i++) {
-                        jsonPost = jsonPosts.getJSONObject(i);
-                        title = jsonPost.getString("title");
-                        Log.v(TAG, "Post " + i + ": " + title);
-                    }
                 }
                 else {
                     Log.i(TAG, "Unsuccessful Http Request Code: " + responseCode);
@@ -108,8 +130,13 @@ public class MainListActivity extends ListActivity {
             catch (Exception e) {
                 Log.e(TAG, "Exception caught: ", e);
             }
+            return jsonResponse;
+        }
 
-            return "Code: " + responseCode;
+        @Override
+        protected void onPostExecute(JSONObject result) {
+            mBlogData = result;
+            updateList();
         }
     }
 
