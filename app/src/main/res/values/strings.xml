@@ -9,5 +9,6 @@
     <string name="err_msg">There was an error getting data from the blog.</string>
     <string name="title_activity_blog_web_view">BlogPost</string>
     <string name="action_share">Share</string>
+    <string name="share_chooser_title">How do you want to share?</string>
 
 </resources>
